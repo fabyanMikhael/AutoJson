@@ -1,4 +1,4 @@
-# Auto-Json
+# AutoJson
 
 A python module that attempts to let classes be serializable without any work
 
