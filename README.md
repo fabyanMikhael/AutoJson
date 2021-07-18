@@ -1,6 +1,6 @@
 # Auto-Json
 
-Attempts to let classes be serializable without any work
+A python module that attempts to let classes be serializable without any work
 
 # Usage
 ```py
