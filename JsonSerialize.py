@@ -1,11 +1,25 @@
 from __future__ import annotations
 import json
+IGNORES = (dict, list, set)
+__loads__ = json.loads
+__dumps__ = json.dumps
+def encoder(obj : object, DictForm=False):
+    partially_encoded = __encoder__(obj)
+    if DictForm: return partially_encoded
+    return __dumps__(partially_encoded)
 
-def encoder(obj : object):
-    if "ToDict" in dir(obj):
+def __encoder__(obj : object):
+    if hasattr(obj,"ToDict"):
         return obj.ToDict()
     else:
-        return json.dumps(obj)
+        if isinstance(obj, IGNORES):
+            if isinstance(obj, dict):
+                new_obj = {}
+                for i in obj:
+                    new_obj[__encoder__(i)] = __encoder__(obj[i])
+                return new_obj
+            return obj.__class__([__encoder__(i) for i in obj])
+        return obj
 
 SERIALIZABLE_CLASSES : dict = dict()
 def JsonSerializable(IGNORE_ATTRIBUTES = None):
@@ -14,17 +28,26 @@ def JsonSerializable(IGNORE_ATTRIBUTES = None):
         def ToDict(self):
             result = {}
             result["__CLASS_TYPE__"] = cls.__name__
-            SERIALIZABLE_CLASSES[cls.__name__] = cls
-            for variable in vars(self):
+            search_list = []
+            if hasattr(self, "__dict__"): search_list += vars(self)
+            elif hasattr(self, "__slots__"): search_list += self.__slots__
+            for variable in search_list:
                 if variable not in IGNORE_ATTRIBUTES:
-                    result[variable] = getattr(self, variable)
+                    attr = getattr(self, variable)
+                    result[__encoder__(variable)] = __encoder__(attr)
             return result
-        cls.ToDict = ToDict
+        def FromDict(obj):
+            for key, value in obj.items():
+                if not isinstance(value, IGNORES): continue
+                obj[key] = decoder(value)
+            print(obj)
+            return cls(**obj)
+        if not hasattr(cls, 'ToDict'): cls.ToDict = ToDict
+        if not hasattr(cls, 'FromDict'): cls.FromDict = FromDict
+        SERIALIZABLE_CLASSES[cls.__name__] = cls
         return cls
     return Decorator
 
-__loads__ = json.loads
-IGNORES = (dict, list, set)
 def decoder(string, *args, **kwargs):
     if isinstance(string, IGNORES):
         obj = string
@@ -35,8 +58,9 @@ def decoder(string, *args, **kwargs):
         if not cls in SERIALIZABLE_CLASSES: raise TypeError(f"class {cls} is *not* loaded yet!")
         cls = SERIALIZABLE_CLASSES[obj["__CLASS_TYPE__"]]
         obj.pop("__CLASS_TYPE__")
-        for key, value in obj.items():
-            if not isinstance(value, IGNORES): continue
-            obj[key] = decoder(value)
-        return cls(**obj)
+        return cls.FromDict(obj)
+
+    elif isinstance(obj, (list,set)):
+        result = obj.__class__([decoder(i) for i in obj])
+        return result
     return obj
