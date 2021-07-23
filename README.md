@@ -51,3 +51,5 @@ print(Dump) # now just a string, custom classes in json format contain __class_t
 Loaded : User = json.loads(Dump, object_hook=decoder) # make sure to include the object_hook=decoder
 print(Loaded) # now back to a custom object
 ```
+
+#### note: if you want it to encode to a dictionary instead so you can save it to something mongoDB just do `encoder(obj, DictForm=True)`
