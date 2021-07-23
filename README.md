@@ -17,6 +17,19 @@ load = json.loads(dump, object_hook=decoder)
 print(load.id) # should be 155
 ```
 
+You can directly use the encoder/decoder functions
+```py
+from JsonSerialize import JsonSerializable, encoder, decoder
+
+@JsonSerializable()
+class TestClass: 
+    def __init__(self, id : int) -> None:
+        self.id = id
+
+dump = encoder(TestClass(155))
+load = decoder(dump)
+print(load.id) # should be 155
+```
 # Example
 ```py
 from JsonSerialize import JsonSerializable, encoder, decoder
