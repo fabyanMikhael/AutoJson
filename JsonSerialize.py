@@ -3,7 +3,7 @@ import json
 IGNORES = (dict, list, set)
 __loads__ = json.loads
 __dumps__ = json.dumps
-def encoder(obj : object, DictForm=False):
+def encoder(obj : object, DictForm=True):
     partially_encoded = __encoder__(obj)
     if DictForm: return partially_encoded
     return __dumps__(partially_encoded)
